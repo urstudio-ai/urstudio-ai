@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="UR. studio: AI reels, UGC and video ads for beauty and lifestyle brands. Ready in 48 hours.">
+<link rel="icon" href="media/logo.png">
+<title>UR. studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;900&family=Lora:ital,wght@1,400;1,500&family=Alexandria:wght@300;400;600;800&display=swap">
+<style>
+/* Layout: one continuous dark world. A fixed WebGL canvas (particles, speed stripes, floating reel screens) sits behind HTML chapters; scroll moves the camera. */
+:root{
+  --ink:#0A0A0A; --green:#78D403; --white:#FFFFFF; --forest:#14290A; --mint:#E3F5CC; --stone:#8B8B85; --grey:#2A2724;
+  --panel:rgba(10,10,10,.86);
+  --sans:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:"Lora",Georgia,"Times New Roman",serif;
+  --ar:"Alexandria","Inter",system-ui,sans-serif;
+  --gut:max(16px,env(safe-area-inset-left,0px));
+  --gutr:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--ink)}
+body{background:var(--ink);color:var(--white);font-family:var(--sans);font-size:16px;line-height:1.55;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+html[lang="ar"] body{font-family:var(--ar)}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+em{font-style:normal;color:var(--green)}
+.serif{font-family:var(--serif);font-style:italic;font-weight:400}
+html[lang="ar"] .serif{font-family:var(--ar);font-style:normal;font-weight:300}
+:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+
+#gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+main,header,footer{position:relative;z-index:2}
+.wrap{max-width:1240px;margin:0 auto;padding-left:var(--gut);padding-right:var(--gutr)}
+.label{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--green);font-weight:500}
+html[lang="ar"] .label{letter-spacing:0;font-size:13px}
+h1,h2,h3{margin:0;font-weight:900;letter-spacing:-.035em;line-height:.98;text-wrap:balance}
+html[lang="ar"] h1,html[lang="ar"] h2,html[lang="ar"] h3{letter-spacing:0;line-height:1.2;font-weight:800}
+h2{font-size:clamp(40px,7vw,96px)}
+p{margin:0}
+.muted{color:var(--stone)}
+
+/* header */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+header{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:20;transition:background .4s,backdrop-filter .4s}
+header.scrolled{background:rgba(10,10,10,.6);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.bar{display:flex;align-items:center;gap:24px;height:72px}
+.bar .logo img{height:34px;width:auto;display:block}
+nav.links{display:flex;gap:26px;margin-inline-start:auto;font-size:14px}
+nav.links a{text-decoration:none;color:#d8d8d4;position:relative}
+nav.links a:hover{color:var(--white)}
+nav.links a::after{content:"";position:absolute;inset-inline-start:0;bottom:-4px;height:2px;width:0;background:var(--green);transition:width .3s}
+nav.links a:hover::after{width:100%}
+.tools{display:flex;gap:10px;align-items:center}
+.chip{border:1px solid rgba(255,255,255,.18);background:transparent;border-radius:999px;padding:7px 13px;font-size:13px;white-space:nowrap}
+.chip:hover{border-color:var(--green)}
+.btn{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:14px 24px;font-weight:700;font-size:15px;text-decoration:none;border:1px solid transparent;position:relative;overflow:hidden;transition:transform .25s}
+.btn-green{background:var(--green);color:var(--ink)}
+.btn-ghost{border-color:rgba(255,255,255,.3);color:var(--white);background:rgba(10,10,10,.3)}
+.btn::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,transparent 0 10px,rgba(255,255,255,.28) 10px 13px);transform:translateX(-110%);transition:transform .55s ease}
+.btn:hover::before{transform:translateX(110%)}
+.btn-ghost:hover{border-color:var(--green)}
+.btn-sm{padding:10px 18px;font-size:14px}
+.menu-btn{display:none}
+
+/* loader */
+#loader{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:12vh;pointer-events:none;transition:opacity .8s}
+#loader .tag{font-family:var(--serif);font-style:italic;font-size:22px;opacity:.9}
+#loader .line{width:180px;height:2px;background:rgba(255,255,255,.12);margin-top:16px;overflow:hidden}
+#loader .line i{display:block;height:100%;width:0;background:var(--green);transition:width .3s}
+body.ready #loader{opacity:0}
+.reveal{opacity:1;transform:none;transition:opacity 1s ease,transform 1s cubic-bezier(.2,.8,.2,1)}
+body:not(.ready) .reveal{opacity:0;transform:translateY(30px)}
+
+/* hero */
+#hero{position:relative;min-height:100vh;display:flex;align-items:center;padding-block:110px 60px}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;width:100%}
+.hero-copy{min-width:0;display:flex;flex-direction:column;gap:26px}
+#hero h1{font-size:clamp(46px,7.4vw,110px)}
+.hero-sub{font-size:19px;color:#d8d8d4;max-width:30ch}
+.ctas{display:flex;gap:12px;flex-wrap:wrap}
+.hero-art{position:relative;min-width:0;perspective:1200px;display:flex;justify-content:center}
+.hero-art img{width:100%;max-width:520px;height:auto;transform-style:preserve-3d;will-change:transform;filter:drop-shadow(0 40px 60px rgba(0,0,0,.6))}
+.badge{position:absolute;top:2%;inset-inline-start:0;width:118px;height:118px;border-radius:50%;background:var(--green);color:var(--ink);display:grid;place-items:center;z-index:2}
+.badge svg{position:absolute;inset:0;animation:spin 12s linear infinite}
+.badge b{font-size:28px;font-weight:900;letter-spacing:-.04em}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--stone);display:flex;flex-direction:column;align-items:center;gap:8px}
+.hint i{width:1px;height:38px;background:linear-gradient(var(--green),transparent);animation:drop 1.8s infinite}
+@keyframes drop{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* marquee */
+.marquee{background:var(--green);color:var(--ink);overflow:hidden;white-space:nowrap;padding:16px 0;font-weight:900;font-size:clamp(18px,2.2vw,28px);letter-spacing:-.02em;transform:rotate(-2deg) scale(1.04);position:relative;z-index:3}
+.marquee .track{display:inline-flex;will-change:transform}
+.marquee span{padding-inline-end:28px}
+
+/* problem */
+#problem{padding-block:160px 140px}
+.problem-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:60px;align-items:end}
+.problem-grid > *{min-width:0}
+#problem p.lead{font-size:20px;color:#d8d8d4;max-width:46ch;margin-top:26px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);border-radius:20px;overflow:hidden}
+.stat{background:var(--ink);padding:26px 22px}
+.stat b{display:block;font-size:clamp(38px,5vw,60px);font-weight:900;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.stat:nth-child(3) b{color:var(--green)}
+.stat span{display:block;margin-top:10px;color:var(--stone);font-size:14px}
+
+/* work feed */
+#work{height:520vh;position:relative}
+.feed-sticky{position:sticky;top:0;height:100vh;pointer-events:none}
+.feed-head{position:absolute;top:110px;inset-inline-start:var(--gut);max-width:420px}
+.feed-head h2{font-size:clamp(40px,6vw,84px);margin-top:12px}
+.feed-head p{margin-top:14px;color:#d8d8d4}
+.feed-meter{position:absolute;bottom:34px;inset-inline-start:var(--gut);inset-inline-end:100px;display:flex;align-items:center;gap:16px;font-size:13px;color:var(--stone);font-variant-numeric:tabular-nums}
+.feed-meter .bar2{flex:1;height:2px;background:rgba(255,255,255,.12);position:relative;overflow:hidden}
+.feed-meter .bar2 i{position:absolute;inset:0;background:var(--green);transform-origin:left;transform:scaleX(0)}
+html[dir="rtl"] .feed-meter .bar2 i{transform-origin:right}
+#reelTag{position:fixed;z-index:15;pointer-events:none;background:var(--green);color:var(--ink);font-weight:700;font-size:13px;padding:8px 14px;border-radius:999px;opacity:0;transform:translate(-50%,-160%);transition:opacity .2s;white-space:nowrap}
+.quick-grid{display:none}
+
+/* realism */
+#realism{height:420vh;position:relative}
+.real-sticky{position:sticky;top:0;height:100vh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:40px;padding-left:var(--gut);padding-right:var(--gutr);background:radial-gradient(ellipse at center,#3a0b06 0%,#160403 45%,var(--ink) 80%)}
+.real-frame{height:min(78vh,860px);aspect-ratio:3/4;max-width:calc(100vw - 32px);position:relative;border-radius:24px;overflow:hidden;box-shadow:0 50px 120px rgba(0,0,0,.6)}
+.real-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;will-change:transform,opacity}
+.real-side{display:flex;flex-direction:column;gap:18px;min-width:0}
+.real-side.right{align-items:flex-end;text-align:end}
+.real-steps{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
+.real-steps li{font-size:clamp(20px,2.2vw,30px);font-weight:700;letter-spacing:-.02em;color:rgba(255,255,255,.25);transition:color .3s}
+.real-steps li.on{color:var(--white)}
+.real-steps li.on small{color:var(--green)}
+.real-steps small{display:inline-block;width:38px;margin-inline-end:8px;font-size:13px;color:var(--stone);font-weight:500}
+.real-end{font-size:22px;max-width:22ch;opacity:0;transition:opacity .5s}
+.real-end.on{opacity:1}
+
+/* one photo */
+#onephoto{padding-block:160px;overflow:hidden}
+.one-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.one-grid > *{min-width:0}
+.bubble{display:inline-block;padding:14px 20px;border-radius:22px;font-size:18px;max-width:34ch}
+.bubble.them{background:var(--grey);border-end-start-radius:4px}
+.bubble.us{background:var(--green);color:var(--ink);font-weight:700;border-end-end-radius:4px;margin-top:12px}
+.chat{display:flex;flex-direction:column;align-items:flex-start;margin-block:30px}
+.chat .us{align-self:flex-end}
+.phones{display:flex;gap:22px;justify-content:center}
+.phone{width:min(240px,42vw);aspect-ratio:9/16;border-radius:30px;border:6px solid #1b1b1b;background:#000;overflow:hidden;position:relative;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.08);cursor:pointer;will-change:transform}
+.phone video{width:100%;height:100%;object-fit:cover;display:block}
+.phone .play{position:absolute;bottom:12px;inset-inline-start:12px;background:rgba(10,10,10,.7);border-radius:999px;font-size:12px;padding:6px 12px}
+
+/* solid chapters */
+.solid{background:var(--panel);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+section.chapter{padding-block:130px}
+.chapter-head{display:flex;flex-direction:column;gap:18px;margin-bottom:56px;max-width:900px}
+.services{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.svc{background:var(--grey);border-radius:22px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0;transition:transform .35s,background .35s;position:relative;overflow:hidden}
+.svc:hover{transform:translateY(-6px);background:#33302c}
+.svc video,.svc img{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:14px;display:block;background:#000}
+.svc .n{font-size:13px;color:var(--green);font-weight:700}
+.svc h3{font-size:24px;letter-spacing:-.02em}
+.svc p{color:#cfcfca;font-size:15px}
+.note{margin-top:30px;color:var(--stone);font-size:15px;max-width:70ch}
+
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;position:relative}
+.steps::before{content:"";position:absolute;top:22px;inset-inline:0;height:2px;background:rgba(255,255,255,.12)}
+.steps .fill{position:absolute;top:22px;inset-inline-start:0;height:2px;background:var(--green);width:0;transition:width .2s linear}
+.step{position:relative;display:flex;flex-direction:column;gap:12px;min-width:0}
+.step .dot{width:46px;height:46px;border-radius:50%;background:var(--ink);border:2px solid rgba(255,255,255,.2);display:grid;place-items:center;font-weight:700;font-size:14px;transition:all .3s;position:relative}
+.step.on .dot{background:var(--green);border-color:var(--green);color:var(--ink)}
+.step h3{font-size:20px;letter-spacing:-.01em;line-height:1.2}
+.step p{color:var(--stone);font-size:14px}
+
+.toggle{display:inline-flex;border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:4px;gap:4px}
+.toggle button{border:0;background:transparent;border-radius:999px;padding:9px 16px;font-size:14px}
+.toggle button[aria-pressed="true"]{background:var(--white);color:var(--ink);font-weight:700}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+.plan{border:1px solid rgba(255,255,255,.14);border-radius:24px;padding:30px;display:flex;flex-direction:column;gap:18px;min-width:0;transition:transform .4s,box-shadow .4s}
+.plan.pop{background:var(--green);color:var(--ink);border-color:var(--green)}
+.plan.flash{transform:scale(1.03);box-shadow:0 0 0 3px var(--white)}
+.plan h3{font-size:26px;letter-spacing:-.02em;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.plan .pill{font-size:11px;background:var(--ink);color:var(--green);border-radius:999px;padding:5px 10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.plan .price{font-size:clamp(40px,4.4vw,58px);font-weight:900;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.plan .price small{font-size:16px;font-weight:500;letter-spacing:0}
+.plan p{font-size:15px;opacity:.85}
+.plan .btn{margin-top:auto;justify-content:center}
+.plan.pop .btn{background:var(--ink);color:var(--green)}
+.compare{margin-top:40px;overflow-x:auto;border:1px solid rgba(255,255,255,.12);border-radius:18px}
+.compare table{width:100%;border-collapse:collapse;min-width:640px;font-size:14px}
+.compare th,.compare td{padding:14px 16px;text-align:start;border-bottom:1px solid rgba(255,255,255,.08)}
+.compare th{color:var(--stone);font-weight:500}
+.compare td.ur,.compare th.ur{background:rgba(120,212,3,.1);color:var(--white);font-weight:700}
+.compare tr:last-child td{border-bottom:0}
+
+.about-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:60px;align-items:center}
+.about-grid > *{min-width:0}
+.portrait{aspect-ratio:4/5;border-radius:26px;background:var(--forest);position:relative;overflow:hidden;display:grid;place-items:center}
+.portrait img{width:62%;opacity:.95}
+.portrait span{position:absolute;bottom:16px;inset-inline-start:18px;font-size:12px;color:var(--mint);opacity:.7}
+.about-grid p.big{font-size:21px;color:#e2e2dd;margin-top:22px}
+.sign{margin-top:22px;font-size:22px}
+.meanings{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:34px}
+.meaning{border-top:2px solid var(--green);padding-top:14px}
+.meaning b{display:block;font-size:18px}
+.meaning span{color:var(--stone);font-size:14px}
+
+.courses{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.course{background:var(--mint);color:var(--forest);border-radius:22px;padding:26px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.course .soon{align-self:flex-start;background:var(--forest);color:var(--mint);font-size:11px;padding:5px 10px;border-radius:999px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.course h3{font-size:24px;letter-spacing:-.02em;line-height:1.1}
+.course p{font-size:14px;opacity:.8}
+.wait{display:flex;gap:10px;margin-top:26px;flex-wrap:wrap;max-width:560px}
+.wait input{flex:1;min-width:200px}
+
+input,select,textarea{font:inherit;color:var(--white);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 16px;width:100%}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green)}
+select option{background:var(--ink)}
+
+/* audit */
+#audit{min-height:110vh;padding-block:160px 120px;display:flex;align-items:center}
+.audit-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;width:100%}
+.audit-grid > *{min-width:0}
+#audit h2{font-size:clamp(46px,7vw,100px)}
+#audit .lead{font-size:20px;color:#d8d8d4;margin-top:24px;max-width:40ch}
+form.audit{background:rgba(20,41,10,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(120,212,3,.25);border-radius:26px;padding:28px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+form.audit .full{grid-column:1/-1}
+form.audit label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--mint)}
+form.audit .btn{justify-content:center;margin-top:6px}
+.done{display:none;grid-column:1/-1;font-size:20px;font-weight:700;text-align:center;padding:30px 0}
+form.audit.sent > *:not(.done){display:none}
+form.audit.sent .done{display:block}
+
+footer{padding-block:80px 40px;border-top:1px solid rgba(255,255,255,.08);background:var(--ink);overflow:hidden}
+.foot-tag{font-family:var(--serif);font-style:italic;font-size:clamp(44px,10vw,150px);line-height:1;letter-spacing:-.03em;white-space:nowrap}
+html[lang="ar"] .foot-tag{font-family:var(--ar);font-style:normal;font-weight:800}
+.foot-row{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-top:50px;color:var(--stone);font-size:14px;align-items:center}
+.foot-row img{height:30px}
+.foot-row .sel{user-select:all;color:var(--white)}
+
+/* lightbox */
+#lightbox{position:fixed;inset:0;z-index:50;background:rgba(5,5,5,.94);display:flex;align-items:center;justify-content:center;gap:24px;padding:24px}
+#lightbox video{height:min(86vh,900px);max-width:100%;aspect-ratio:9/16;border-radius:18px;background:#000}
+#lightbox .meta{max-width:280px}
+#lightbox .meta h3{font-size:30px;margin-top:8px}
+#lightbox .meta p{color:var(--stone);margin-top:10px}
+#lightbox .x{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));inset-inline-end:calc(16px + env(safe-area-inset-right,0px));width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:transparent;font-size:22px}
+#lightbox .nav{display:flex;gap:10px;margin-top:20px}
+
+/* concierge */
+#cBtn{position:fixed;z-index:40;bottom:calc(20px + env(safe-area-inset-bottom,0px));inset-inline-end:calc(20px + env(safe-area-inset-right,0px));width:64px;height:64px;border-radius:50%;background:var(--green);border:0;display:grid;place-items:center;box-shadow:0 10px 40px rgba(120,212,3,.35);transition:transform .3s}
+#cBtn:hover{transform:scale(1.08) rotate(-6deg)}
+#cBtn svg{width:34px;height:34px}
+#cPanel{position:fixed;z-index:41;bottom:calc(96px + env(safe-area-inset-bottom,0px));inset-inline-end:calc(20px + env(safe-area-inset-right,0px));width:min(380px,calc(100vw - 32px));max-height:min(620px,calc(100vh - 140px));background:#111;border:1px solid rgba(255,255,255,.12);border-radius:24px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.c-top{display:flex;align-items:center;gap:12px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.c-top img{height:22px}
+.c-top b{font-size:15px}
+.c-top span{font-size:12px;color:var(--green);display:block;font-weight:400}
+.c-top button{margin-inline-start:auto;border:0;background:transparent;font-size:20px;color:var(--stone)}
+.c-body{padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;flex:1}
+.msg{max-width:86%;padding:11px 15px;border-radius:18px;font-size:15px;line-height:1.45;animation:pop .3s ease}
+.msg.bot{background:var(--grey);align-self:flex-start;border-end-start-radius:4px}
+.msg.me{background:var(--green);color:var(--ink);align-self:flex-end;border-end-end-radius:4px;font-weight:600}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.opts button{border:1px solid rgba(120,212,3,.5);background:transparent;border-radius:999px;padding:8px 14px;font-size:14px}
+.opts button:hover{background:rgba(120,212,3,.15)}
+.opts button.solidb{background:var(--green);color:var(--ink);border-color:var(--green);font-weight:700}
+
+/* cursor */
+#cur{position:fixed;z-index:60;top:-100px;left:-100px;pointer-events:none;width:12px;height:12px;border-radius:999px;background:var(--green);transform:translate(-50%,-50%);transition:width .25s,height .25s,background .25s;display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--ink);mix-blend-mode:normal}
+#cur.big{width:76px;height:76px}
+@media (hover:none){#cur{display:none}}
+
+.flyer{position:fixed;z-index:45;pointer-events:none;width:46px;animation:fly 3.2s cubic-bezier(.4,.1,.3,1) forwards}
+@keyframes fly{from{transform:translate(0,0) rotate(-10deg);opacity:1}to{transform:translate(120vw,-70vh) rotate(-25deg);opacity:0}}
+html[dir="rtl"] .flyer{animation-name:flyr}
+@keyframes flyr{from{transform:translate(0,0) scaleX(-1);opacity:1}to{transform:translate(-120vw,-70vh) scaleX(-1);opacity:0}}
+
+.case{height:340vh;position:relative}
+.case-sticky{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:center;background:linear-gradient(180deg,var(--ink),#17120a 50%,var(--ink))}
+.case-track{display:flex;gap:22px;align-items:center;padding-inline:var(--gut);will-change:transform}
+.case-intro{flex:none;width:min(440px,82vw);display:flex;flex-direction:column;gap:18px;padding-inline-end:30px}
+.case-intro h2{font-size:clamp(40px,5.4vw,78px)}
+.case-intro p{color:#d8d8d4;font-size:18px}
+.case-intro .facts{display:flex;gap:26px;margin-top:6px}
+.case-intro .facts b{display:block;font-size:34px;font-weight:900;letter-spacing:-.03em;color:var(--green)}
+.case-intro .facts span{font-size:13px;color:var(--stone)}
+.case-card{flex:none;height:min(72vh,640px);aspect-ratio:3/4;border-radius:20px;overflow:hidden;position:relative;background:#111;box-shadow:0 30px 70px rgba(0,0,0,.5);transition:transform .4s}
+.case-card:nth-child(even){transform:translateY(34px)}
+.case-card:hover{transform:translateY(-8px) scale(1.02)}
+.case-card img,.case-card video{width:100%;height:100%;object-fit:cover;display:block}
+.case-card figcaption{position:absolute;bottom:12px;inset-inline-start:12px;background:rgba(10,10,10,.72);border-radius:999px;font-size:12px;padding:6px 12px}
+.case-card.vid{aspect-ratio:9/16;cursor:pointer;outline:2px solid var(--green);outline-offset:-2px}
+html.quick .case{height:auto}
+html.quick .case-sticky{position:relative;height:auto;padding-block:120px;overflow-x:auto}
+@media (max-width:960px){.case-card{height:min(62vh,520px)}}
+/* quick view & fallbacks */
+html.quick #gl,html.quick .feed-sticky{display:none}
+html.quick #work{height:auto;padding-block:130px}
+html.quick .quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+html.quick .quick-head{display:block}
+.quick-head{display:none}
+.quick-grid .phone{width:100%}
+html.quick #realism{height:auto}
+html.quick .real-sticky{position:relative;height:auto;padding-block:120px;grid-template-columns:1fr;justify-items:center}
+html.quick .real-frame{display:none}
+html.quick .real-grid{display:grid}
+.real-grid{display:none;grid-template-columns:repeat(4,1fr);gap:12px;width:100%}
+.real-grid img{width:100%;border-radius:16px;aspect-ratio:3/4;object-fit:cover}
+html.quick .real-steps li{color:var(--white)}
+html.quick .real-end{opacity:1}
+html.quick .solid{background:var(--ink)}
+
+@media (max-width:960px){
+  nav.links{display:none}
+  .tools .hide-m{display:none}
+  .hero-grid,.problem-grid,.one-grid,.about-grid,.audit-grid{grid-template-columns:1fr}
+  .hero-art{order:-1;margin-top:10px}
+  .hero-art img{max-width:340px}
+  .badge{width:90px;height:90px}
+  .services{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr;gap:22px}
+  .steps::before,.steps .fill{display:none}
+  .step{flex-direction:row;align-items:flex-start;gap:16px}
+  .step .dot{flex:none}
+  .plans,.courses{grid-template-columns:1fr}
+  .real-sticky{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;gap:14px;padding-block:80px 20px;justify-items:center}
+  .real-frame{height:auto;width:min(82vw,420px)}
+  .real-side.left{display:none}
+  .real-side.right{align-items:center;text-align:center}
+  .real-steps{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px 14px}
+  .real-steps li{font-size:15px}
+  .real-steps small{width:auto;margin-inline-end:4px}
+  html.quick .quick-grid{grid-template-columns:1fr 1fr}
+  .real-grid{grid-template-columns:1fr 1fr}
+  form.audit{grid-template-columns:1fr}
+  #lightbox{flex-direction:column}
+  #lightbox video{height:auto;width:min(88vw,420px);max-height:70vh}
+  #lightbox .meta{text-align:center}
+  .feed-head{top:96px;inset-inline-end:var(--gutr)}
+  .feed-meter{inset-inline-end:96px}
+  .feed-meter span:last-child{display:none}
+}
+@media (max-width:520px){
+  .services{grid-template-columns:1fr}
+  .meanings{grid-template-columns:1fr}
+  .bar{gap:10px}
+  .bar .logo img{height:28px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+
+<canvas id="gl" aria-hidden="true"></canvas>
+<div id="cur"></div>
+<div id="reelTag"></div>
+
+<div id="loader" aria-hidden="true">
+  <div class="tag" data-i18n="loader">your brand, in our hands.</div>
+  <div class="line"><i id="loadbar"></i></div>
+</div>
+
+<header id="top">
+  <div class="wrap bar">
+    <a class="logo" href="#hero" aria-label="UR. studio home"><img src="media/logo.png" alt="UR. studio"></a>
+    <nav class="links">
+      <a href="#work" data-i18n="nav.work">Work</a>
+      <a href="#services" data-i18n="nav.services">Services</a>
+      <a href="#about" data-i18n="nav.about">About</a>
+      <a href="#academy" data-i18n="nav.academy">Academy</a>
+    </nav>
+    <div class="tools">
+      <button class="chip hide-m" id="quickBtn" data-i18n="nav.quick">Quick view</button>
+      <button class="chip" id="langBtn" aria-label="Switch language">EN | ع</button>
+      <a class="btn btn-green btn-sm hide-m" href="#audit" data-i18n="nav.cta">Book a call</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="hero">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <div class="label reveal" data-i18n="hero.label">AI content studio · Cairo · GCC</div>
+        <h1 class="reveal" data-i18n="hero.h1">AI reels that make people <em>stop</em> &amp; watch.</h1>
+        <p class="hero-sub reveal" data-i18n="hero.sub">Reels, UGC and video ads for beauty &amp; lifestyle brands. Ready in 48 hours, on a monthly plan.</p>
+        <div class="ctas reveal">
+          <a class="btn btn-green" href="#audit" data-i18n="hero.cta1">Get a free page audit</a>
+          <a class="btn btn-ghost" href="#work" data-i18n="hero.cta2">Enter the feed</a>
+        </div>
+      </div>
+      <div class="hero-art reveal">
+        <div class="badge" aria-label="48 hour delivery">
+          <svg viewBox="0 0 120 120" aria-hidden="true"><defs><path id="circ" d="M60,60 m-46,0 a46,46 0 1,1 92,0 a46,46 0 1,1 -92,0"/></defs><text font-size="11.5" font-weight="700" letter-spacing="3" fill="#0A0A0A"><textPath href="#circ">DELIVERY · DELIVERY · DELIVERY ·</textPath></text></svg>
+          <b>48h</b>
+        </div>
+        <img id="heroImg" src="media/hero.webp" alt="AI model in a green UR. track jacket stepping out of a phone showing the UR. studio Instagram grid" width="1050" height="1400">
+      </div>
+    </div>
+    <div class="hint reveal"><span data-i18n="hero.hint">Scroll to enter the feed</span><i></i></div>
+  </section>
+
+  <div class="marquee" aria-hidden="true"><div class="track" id="mq"></div></div>
+
+  <section id="problem" class="solid">
+    <div class="wrap problem-grid">
+      <div>
+        <div class="label" data-i18n="problem.label">01 — The problem</div>
+        <h2 style="margin-top:18px" data-i18n="problem.h">Ads burn out. <em>We keep them fresh.</em></h2>
+        <p class="lead" data-i18n="problem.p">The same ad is seen 4.2 times on average, and after four views people stop wanting to buy. One video is not enough. Your page needs new angles every month.</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b data-count="4.2" data-fmt="x">4.2×</b><span data-i18n="st1">views of the same ad, on average</span></div>
+        <div class="stat"><b data-count="45" data-fmt="neg">−45%</b><span data-i18n="st2">buying intent after 4 views</span></div>
+        <div class="stat"><b data-count="48" data-fmt="h">48h</b><span data-i18n="st3">from approval to ready-to-post</span></div>
+        <div class="stat"><b data-count="1" data-fmt="n">1</b><span data-i18n="st4">product photo is all we need</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="work" aria-label="Selected work">
+    <div class="feed-sticky">
+      <div class="feed-head">
+        <div class="label" data-i18n="work.label">02 — Inside the feed</div>
+        <h2 data-i18n="work.h">Selected <em>work</em></h2>
+        <p data-i18n="work.hint">Hover a screen. Click to watch with sound.</p>
+      </div>
+      <div class="feed-meter"><span id="feedNum">01 / 06</span><div class="bar2"><i id="feedBar"></i></div><span data-i18n="work.hold">Hold anywhere to warp</span></div>
+    </div>
+    <div class="wrap quick-head">
+      <div class="label" data-i18n="work.label">02 — Inside the feed</div>
+      <h2 style="margin-top:14px" data-i18n="work.h">Selected <em>work</em></h2>
+      <div class="quick-grid" id="quickGrid"></div>
+    </div>
+  </section>
+
+  <section id="realism" aria-label="Realism">
+    <div class="real-sticky">
+      <div class="real-side left">
+        <div class="label" data-i18n="real.label">03 — Realism</div>
+        <h2 style="font-size:clamp(40px,4.6vw,70px)" data-i18n="real.h">Look <em>closer</em>.</h2>
+      </div>
+      <div class="real-frame" id="realFrame">
+        <img src="media/r-skin.jpg" alt="AI close-up of skin with sweat drops, caption: insane skin texture">
+        <img src="media/r-details.jpg" alt="AI eye and eyebrow details in three frames, caption: fine details">
+        <img src="media/r-realism.jpg" alt="AI hairline with water drops, caption: perfect realism">
+        <img src="media/r-ai.jpg" alt="AI boxer with orange glasses and red gloves, caption: yes this is AI">
+      </div>
+      <div class="real-side right">
+        <ol class="real-steps" id="realSteps">
+          <li><small>01</small><span data-i18n="r1">Skin texture</span></li>
+          <li><small>02</small><span data-i18n="r2">Fine details</span></li>
+          <li><small>03</small><span data-i18n="r3">Perfect realism</span></li>
+          <li><small>04</small><span data-i18n="r4">Yes… this is AI.</span></li>
+        </ol>
+        <p class="real-end" id="realEnd"><span data-i18n="real.end">No model. No location. No photographer.</span><br><button class="chip" style="margin-top:14px" data-open="realistic-ad" data-i18n="real.btn">Watch the AI model reel</button></p>
+      </div>
+      <div class="real-grid">
+        <img src="media/r-skin.jpg" alt=""><img src="media/r-details.jpg" alt=""><img src="media/r-realism.jpg" alt=""><img src="media/r-ai.jpg" alt="">
+      </div>
+    </div>
+  </section>
+
+  <section id="onephoto" class="solid">
+    <div class="wrap one-grid">
+      <div>
+        <div class="label" data-i18n="one.label">04 — One photo</div>
+        <h2 style="margin-top:18px" data-i18n="one.h">One photo is <em>enough</em>.</h2>
+        <div class="chat">
+          <div class="bubble them" data-i18n="one.client">"I only have one product photo. Can you make a video out of it?"</div>
+          <div class="bubble us" data-i18n="one.us">Of course!</div>
+        </div>
+        <a class="btn btn-green" href="#audit" data-i18n="one.cta">Send us your product photo</a>
+      </div>
+      <div class="phones" id="phones">
+        <div class="phone" data-open="drink"><video src="media/drink.mp4" poster="media/drink.jpg" muted loop playsinline preload="none"></video><span class="play">▶ 0:08</span></div>
+        <div class="phone" data-open="santa" style="margin-top:80px"><video src="media/santa.mp4" poster="media/santa.jpg" muted loop playsinline preload="none"></video><span class="play">▶ 0:07</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="case" class="case" aria-label="Case study: nspired Vanilla Blooms">
+    <div class="case-sticky">
+      <div class="case-track" id="caseTrack">
+        <div class="case-intro">
+          <div class="label" data-i18n="cs.label">Case study · nspired</div>
+          <h2 data-i18n="cs.h">Vanilla Blooms, a whole <em>season</em> from one bottle.</h2>
+          <p data-i18n="cs.p">One perfume bottle became a full campaign: nine visuals and a Christmas video ad. No studio, no models, no shoot day.</p>
+          <div class="facts"><div><b>9</b><span data-i18n="cs.f1">campaign visuals</span></div><div><b>1</b><span data-i18n="cs.f2">video ad</span></div><div><b>0</b><span data-i18n="cs.f3">shoot days</span></div></div>
+        </div>
+<figure class="case-card" style="margin:0"><img src="media/vb-iv.jpg" alt="nspired Vanilla Blooms AI campaign image: "What’s your addiction?"" loading="lazy"><figcaption data-i18n="vb0">"What’s your addiction?"</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-news.jpg" alt="nspired Vanilla Blooms AI campaign image: The perfect match" loading="lazy"><figcaption data-i18n="vb1">The perfect match</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-giant.jpg" alt="nspired Vanilla Blooms AI campaign image: Bigger than life" loading="lazy"><figcaption data-i18n="vb2">Bigger than life</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-eye.jpg" alt="nspired Vanilla Blooms AI campaign image: Beauty close-up" loading="lazy"><figcaption data-i18n="vb3">Beauty close-up</figcaption></figure>
+<figure class="case-card vid" style="margin:0" data-open="santa"><video src="media/santa.mp4" poster="media/santa.jpg" muted loop playsinline preload="none"></video><figcaption data-i18n="vb.vid">▶ The Christmas ad</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-wall.jpg" alt="nspired Vanilla Blooms AI campaign image: The bottle wall" loading="lazy"><figcaption data-i18n="vb4">The bottle wall</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-lips.jpg" alt="nspired Vanilla Blooms AI campaign image: Sip it in" loading="lazy"><figcaption data-i18n="vb5">Sip it in</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-snow.jpg" alt="nspired Vanilla Blooms AI campaign image: Winter edit" loading="lazy"><figcaption data-i18n="vb6">Winter edit</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-petals.jpg" alt="nspired Vanilla Blooms AI campaign image: Petals & thorns" loading="lazy"><figcaption data-i18n="vb7">Petals & thorns</figcaption></figure>
+<figure class="case-card" style="margin:0"><img src="media/vb-dress.jpg" alt="nspired Vanilla Blooms AI campaign image: Evening glow" loading="lazy"><figcaption data-i18n="vb8">Evening glow</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="services" class="chapter solid">
+    <div class="wrap">
+      <div class="chapter-head">
+        <div class="label" data-i18n="svc.label">05 — Services</div>
+        <h2 data-i18n="svc.h">Everything your page needs, <em>every month</em>.</h2>
+      </div>
+      <div class="services">
+        <article class="svc"><video src="media/realistic-ad.mp4" poster="media/realistic-ad.jpg" muted loop playsinline preload="none"></video><span class="n">01</span><h3 data-i18n="s1.t">Video ads</h3><p data-i18n="s1.p">Cinematic 15–30s ads built to sell.</p></article>
+        <article class="svc"><video src="media/brand-day.mp4" poster="media/brand-day.jpg" muted loop playsinline preload="none"></video><span class="n">02</span><h3 data-i18n="s2.t">Reels</h3><p data-i18n="s2.p">Scroll-stopping reels for Instagram and TikTok.</p></article>
+        <article class="svc"><video src="media/unboxing.mp4" poster="media/unboxing.jpg" muted loop playsinline preload="none"></video><span class="n">03</span><h3 data-i18n="s3.t">UGC</h3><p data-i18n="s3.p">Real-feeling reviews and unboxings, with no shoot day.</p></article>
+        <article class="svc"><video src="media/drink.mp4" poster="media/drink.jpg" muted loop playsinline preload="none"></video><span class="n">04</span><h3 data-i18n="s4.t">Carousels &amp; product images</h3><p data-i18n="s4.p">Saveable carousels and hero product shots.</p></article>
+      </div>
+      <p class="note" data-i18n="svc.note">Every month: page audit → plan and scripts → videos, images and carousels → report. Two revisions per video.</p>
+    </div>
+  </section>
+
+  <section id="process" class="chapter solid">
+    <div class="wrap">
+      <div class="chapter-head">
+        <div class="label" data-i18n="pr.label">06 — How it works</div>
+        <h2 data-i18n="pr.h">From brief to post in <em>48 hours</em>.</h2>
+      </div>
+      <div class="steps" id="steps">
+        <div class="fill" id="stepFill"></div>
+        <div class="step"><div class="dot">1</div><div><h3 data-i18n="p1.t">Short form</h3><p data-i18n="p1.p">Tell us about your brand in two minutes.</p></div></div>
+        <div class="step"><div class="dot">2</div><div><h3 data-i18n="p2.t">Free page audit</h3><p data-i18n="p2.p">We find the top 3 problems stopping your sales.</p></div></div>
+        <div class="step"><div class="dot">3</div><div><h3 data-i18n="p3.t">Meeting</h3><p data-i18n="p3.p">We agree on goals and a first-month offer.</p></div></div>
+        <div class="step"><div class="dot">4</div><div><h3 data-i18n="p4.t">Monthly plan</h3><p data-i18n="p4.p">Ideas, hooks and scripts approved before we produce.</p></div></div>
+        <div class="step"><div class="dot">5</div><div><h3 data-i18n="p5.t">First batch in 48h</h3><p data-i18n="p5.p">Ready-to-post content in every platform size.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="about" class="chapter solid">
+    <div class="wrap about-grid">
+      <div class="portrait" data-open="brand-identity" style="cursor:pointer"><video src="media/brand-identity.mp4" poster="media/brand-identity.jpg" muted loop playsinline preload="none" style="width:100%;height:100%;object-fit:cover"></video></div>
+      <div>
+        <div class="label" data-i18n="ab.label">07 — About</div>
+        <h2 style="margin-top:18px" data-i18n="ab.h">UR. means <em>your</em>.</h2>
+        <p class="big" data-i18n="ab.p">And "you are". UR. studio is an AI content studio from Cairo, and it is all about you: your brand, your audience, your story, in our hands. We study your page first, then make content that looks expensive and sells, for a fraction of a traditional shoot.</p>
+        <p class="sign"><span class="serif" data-i18n="ab.sign">Fatma, Founder &amp; Creative Director</span></p>
+        <div class="meanings">
+          <div class="meaning"><b data-i18n="m1.t">Rise</b><span data-i18n="m1.p">Your brand takes off.</span></div>
+          <div class="meaning"><b data-i18n="m2.t">Motion</b><span data-i18n="m2.p">Speed lines, film strips, endless reels.</span></div>
+          <div class="meaning"><b data-i18n="m3.t">Vision</b><span data-i18n="m3.p">Taste that sees what stops the scroll.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="academy" class="chapter solid">
+    <div class="wrap">
+      <div class="chapter-head">
+        <div class="label" data-i18n="ac.label">08 — Academy</div>
+        <h2 data-i18n="ac.h">Learn to create <em>like UR.</em></h2>
+        <p class="muted" style="font-size:18px" data-i18n="ac.p">Courses on AI content for creators and brand owners. Coming soon.</p>
+      </div>
+      <div class="courses">
+        <div class="course"><span class="soon" data-i18n="ac.soon">Coming soon</span><h3 data-i18n="c1.t">From one photo to a product video</h3><p data-i18n="c1.p">Beginner · 2 hours</p></div>
+        <div class="course"><span class="soon" data-i18n="ac.soon">Coming soon</span><h3 data-i18n="c2.t">Realistic AI models</h3><p data-i18n="c2.p">Intermediate · 3 hours</p></div>
+        <div class="course"><span class="soon" data-i18n="ac.soon">Coming soon</span><h3 data-i18n="c3.t">A monthly content system for brands</h3><p data-i18n="c3.p">Advanced · 4 hours</p></div>
+      </div>
+      <form class="wait" id="waitForm">
+        <input id="waitEmail" type="email" required data-i18n-ph="ac.ph" placeholder="Your email" aria-label="Email">
+        <button class="btn btn-green" type="submit" id="waitBtn" data-i18n="ac.btn">Join the waitlist</button>
+      </form>
+    </div>
+  </section>
+
+  <section id="audit">
+    <div class="wrap audit-grid">
+      <div>
+        <div class="label" data-i18n="au.label">09 — Free page audit</div>
+        <h2 style="margin-top:18px" data-i18n="au.h">Your ad didn't fail. It got <em>old</em>.</h2>
+        <p class="lead" data-i18n="au.p">We review your page and send you the top 3 fixes, for free. Then we make the content.</p>
+      </div>
+      <form class="audit" id="auditForm">
+        <label><span data-i18n="f.name">Your name</span><input id="fName" required></label>
+        <label><span data-i18n="f.brand">Brand name</span><input id="fBrand" required></label>
+        <label class="full"><span data-i18n="f.link">Instagram or TikTok link</span><input id="fLink" placeholder="instagram.com/yourbrand"></label>
+        <label><span data-i18n="f.country">Country</span><select id="fCountry"><option data-i18n="f.eg">Egypt</option><option data-i18n="f.sa">Saudi Arabia</option><option data-i18n="f.other">Other</option></select></label>
+        <label><span data-i18n="f.wa">WhatsApp number</span><input id="fWa" inputmode="tel"></label>
+        <label class="full"><span data-i18n="f.need">What do you need?</span><select id="fNeed"><option data-i18n="n1">Fresh ads every month</option><option data-i18n="n2">A product launch</option><option data-i18n="n3">More content, more often</option></select></label>
+        <button class="btn btn-green full" type="submit" data-i18n="f.btn">Get my free page audit</button>
+        <div class="done" data-i18n="f.done">Sent. We'll review your page and send your top 3 fixes.</div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-tag" data-i18n="foot.tag">your brand, in our hands.</div>
+    <div class="foot-row">
+      <img src="media/logo.png" alt="UR. studio">
+      <span>Instagram · TikTok · <span class="sel">@ur.studio</span></span>
+      <span class="sel">hello@ur.studio</span>
+      <span>UR. studio · Cairo · 2026</span>
+    </div>
+  </div>
+</footer>
+
+<div id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Reel player">
+  <button class="x" id="lbClose" aria-label="Close">✕</button>
+  <video id="lbVideo" controls playsinline></video>
+  <div class="meta"><div class="label" id="lbTag"></div><h3 id="lbTitle"></h3><p id="lbDesc"></p><div class="nav"><button class="chip" id="lbPrev">←</button><button class="chip" id="lbNext">→</button></div></div>
+</div>
+
+<button id="cBtn" aria-label="Open UR. Concierge" aria-expanded="false">
+  <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M6 30 L20 8 L22 14 L12 30Z M13 31 L23 15 L25 21 L19 31Z M20 32 L26 22 L28 27 L26 32Z M22 9 L33 6 L28 13Z" fill="#0A0A0A"/></svg>
+</button>
+<div id="cPanel" hidden>
+  <div class="c-top"><img src="media/logo.png" alt=""><div><b>UR. Concierge</b><span data-i18n="c.status">Online · replies in seconds</span></div><button id="cClose" aria-label="Close">✕</button></div>
+  <div class="c-body" id="cBody" aria-live="polite"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const isTouch=matchMedia('(hover: none)').matches;
+
+/* ---------- content ---------- */
+const REELS=[
+ {id:'brand-identity',tag:{en:'Brand identity',ar:'هوية براند'},t:{en:'UR. studio identity',ar:'هوية UR. studio'},d:{en:'Cards, a wax seal, speed stripes and the product: our own brand, all made with AI.',ar:'كروت، وختم شمع، وخطوط سرعة، والمنتج: البراند بتاعنا، معمول كله بالـ AI.'}},
+ {id:'brand-day',tag:{en:'Reel',ar:'ريل'},t:{en:'A day in UR. studio',ar:'يوم في UR. studio'},d:{en:'From the card to the camera to the product, all made with AI.',ar:'من الكارت للكاميرا للمنتج.. كله بإيد UR. وبالـ AI.'}},
+ {id:'unboxing',tag:{en:'UGC · Unboxing',ar:'UGC · أنبوكسينج'},t:{en:'The unboxing moment',ar:'لحظة كشف البراند'},d:{en:'Hands, paper and a calm brand reveal. Not one shot was filmed with a camera.',ar:'إيدين، ورق، وكشف هادي للبراند.. ولا لقطة فيهم اتصورت بكاميرا.'}},
+ {id:'realistic-ad',tag:{en:'Video ad · UGC',ar:'إعلان فيديو · UGC'},t:{en:'The realistic AI ad',ar:'الإعلان الواقعي بالـ AI'},d:{en:'An AI creator talking to camera, ready to post as UGC.',ar:'كرييتور AI بيتكلم للكاميرا، جاهز ينزل كـ UGC.'}},
+ {id:'drink',tag:{en:'Product ad',ar:'إعلان منتج'},t:{en:'The drink ad',ar:'إعلان المشروب'},d:{en:'One product shot turned into a sunny, cinematic ad.',ar:'صورة منتج واحدة بقت إعلان سينمائي في الشمس.'}},
+ {id:'santa',tag:{en:'Video ad · nspired',ar:'إعلان فيديو · nspired'},t:{en:'Vanilla Blooms Christmas ad',ar:'إعلان الكريسماس لـ Vanilla Blooms'},d:{en:'One bottle, a nutcracker and a ribbon: a seasonal ad made fully with AI.',ar:'إزازة واحدة، وعسكري جوز الهند، وشريطة: إعلان موسمي معمول كله بالـ AI.'}},
+ {id:'duckies',tag:{en:'Brand identity',ar:'هوية براند'},t:{en:'Duckies',ar:'Duckies'},d:{en:'More ads? Noise. An identity built to be remembered.',ar:'إعلانات أكتر؟ دوشة. هوية معمولة عشان تتفكر.'}}
+];
+
+const T={
+en:{
+loader:'your brand, in our hands.','nav.work':'Work','nav.services':'Services','nav.pricing':'Pricing','nav.about':'About','nav.academy':'Academy','nav.cta':'Book a call','nav.quick':'Quick view','nav.immersive':'3D view',
+'hero.label':'AI content studio · Cairo · GCC','hero.h1':'AI reels that make people <em>stop</em> &amp; watch.','hero.sub':'Reels, UGC and video ads for beauty &amp; lifestyle brands. Ready in 48 hours, on a monthly plan.','hero.cta1':'Get a free page audit','hero.cta2':'Enter the feed','hero.hint':'Scroll to enter the feed',
+mq:'STOP THE SCROLL ✦ UGC THAT SELLS ✦ 48H DELIVERY ✦ NO STUDIO ✦ NO MODELS ✦ NEW ANGLES EVERY MONTH ✦',
+'problem.label':'01 — The problem','problem.h':'Ads burn out. <em>We keep them fresh.</em>','problem.p':'The same ad is seen 4.2 times on average, and after four views people stop wanting to buy. One video is not enough. Your page needs new angles every month.',
+st1:'views of the same ad, on average',st2:'buying intent after 4 views',st3:'from approval to ready-to-post',st4:'product photo is all we need',
+'work.label':'02 — Inside the feed','work.h':'Selected <em>work</em>','work.hint':'Hover a screen. Click to watch with sound.','work.hold':'Hold anywhere to warp',
+'real.label':'03 — Realism','real.h':'Look <em>closer</em>.',r1:'Skin texture',r2:'Fine details',r3:'Perfect realism',r4:'Yes… this is AI.','real.end':'No model. No location. No photographer.','real.btn':'Watch the AI model reel',
+'one.label':'04 — One photo','one.h':'One photo is <em>enough</em>.','one.client':'"I only have one product photo. Can you make a video out of it?"','one.us':'Of course!','one.cta':'Send us your product photo',
+'svc.label':'05 — Services','svc.h':'Everything your page needs, <em>every month</em>.','s1.t':'Video ads','s1.p':'Cinematic 15–30s ads built to sell.','s2.t':'Reels','s2.p':'Scroll-stopping reels for Instagram and TikTok.','s3.t':'UGC','s3.p':'Real-feeling reviews and unboxings, with no shoot day.','s4.t':'Carousels &amp; product images','s4.p':'Saveable carousels and hero product shots.','svc.note':'Every month: page audit → plan and scripts → videos, images and carousels → report. Two revisions per video.',
+'pr.label':'06 — How it works','pr.h':'From brief to post in <em>48 hours</em>.','p1.t':'Short form','p1.p':'Tell us about your brand in two minutes.','p2.t':'Free page audit','p2.p':'We find the top 3 problems stopping your sales.','p3.t':'Meeting','p3.p':'We agree on goals and a first-month offer.','p4.t':'Monthly plan','p4.p':'Ideas, hooks and scripts approved before we produce.','p5.t':'First batch in 48h','p5.p':'Ready-to-post content in every platform size.',
+'pc.label':'07 — Plans','pc.h':'One subscription. <em>Fresh content</em> every month.','pc.eg':'Egypt (EGP)','pc.sa':'Saudi (SAR)','pc.pop':'Popular','pc.btn':'Start with a free audit',pl1:'4 videos + 4 product images',pl2:'6–8 videos + 8–10 images + carousel + monthly report',pl3:'10–15 videos + 15 images + 2 carousels + report',month:'/ month',custom:'Custom',
+'cm.fr':'AI freelancer','cm.ag':'AI agency (Dubai)','cm.tr':'Traditional shoot','cm.r1':'Understands your page first','cm.r1a':'Free page audit','cm.no':'No','cm.some':'Sometimes','cm.r2':'Price per video','cm.r2a':'≈ 2,000 EGP','cm.r2b':'from $10','cm.r3':'Delivery','cm.r3a':'48 hours','cm.r3b':'1–2 days','cm.r3c':'3–5 days','cm.r3d':'2–4 weeks','cm.r4':'Fresh angles monthly','cm.r4a':'Yes, built in','cm.req':'On request','cm.cost':'Costly reshoot',
+'ab.label':'07 — About','ab.h':'UR. means <em>your</em>.','ab.p':'And "you are". UR. studio is an AI content studio from Cairo, and it is all about you: your brand, your audience, your story, in our hands. We study your page first, then make content that looks expensive and sells, for a fraction of a traditional shoot.','ab.sign':'Fatma, Founder &amp; Creative Director','ab.photo':'Fatma’s photo goes here','m1.t':'Rise','m1.p':'Your brand takes off.','m2.t':'Motion','m2.p':'Speed lines, film strips, endless reels.','m3.t':'Vision','m3.p':'Taste that sees what stops the scroll.',
+'ac.label':'08 — Academy','ac.h':'Learn to create <em>like UR.</em>','ac.p':'Courses on AI content for creators and brand owners. Coming soon.','ac.soon':'Coming soon','c1.t':'From one photo to a product video','c1.p':'Beginner · 2 hours','c2.t':'Realistic AI models','c2.p':'Intermediate · 3 hours','c3.t':'A monthly content system for brands','c3.p':'Advanced · 4 hours','ac.ph':'Your email','ac.btn':'Join the waitlist','ac.done':'You’re on the list ✓',
+'au.label':'09 — Free page audit','au.h':'Your ad didn’t fail. It got <em>old</em>.','au.p':'We review your page and send you the top 3 fixes, for free. Then we make the content.','f.name':'Your name','f.brand':'Brand name','f.link':'Instagram or TikTok link','f.country':'Country','f.eg':'Egypt','f.sa':'Saudi Arabia','f.other':'Other','f.wa':'WhatsApp number','f.need':'What do you need?',n1:'Fresh ads every month',n2:'A product launch',n3:'More content, more often','f.btn':'Get my free page audit','f.done':'Sent. We’ll review your page and send your top 3 fixes.',
+'foot.tag':'your brand, in our hands.','c.status':'Online · replies in seconds',vb0:'"What’s your addiction?"',vb1:'The perfect match',vb2:'Bigger than life',vb3:'Beauty close-up',vb4:'The bottle wall',vb5:'Sip it in',vb6:'Winter edit',vb7:'Petals & thorns',vb8:'Evening glow','vb.vid':'▶ The Christmas ad','cs.label':'Case study · nspired','cs.h':'Vanilla Blooms, a whole <em>season</em> from one bottle.','cs.p':'One perfume bottle became a full campaign: nine visuals and a Christmas video ad. No studio, no models, no shoot day.','cs.f1':'campaign visuals','cs.f2':'video ad','cs.f3':'shoot days'
+},
+ar:{
+loader:'براندك، في إيدينا.','nav.work':'الشغل','nav.services':'الخدمات','nav.pricing':'الأسعار','nav.about':'عننا','nav.academy':'الأكاديمية','nav.cta':'احجز مكالمة','nav.quick':'عرض سريع','nav.immersive':'عرض 3D',
+'hero.label':'استوديو محتوى بالـ AI · القاهرة · الخليج','hero.h1':'ريلز بالـ AI تخلّي الناس <em>تقف</em> وتتفرج.','hero.sub':'ريلز وUGC وإعلانات فيديو لبراندات البيوتي واللايف ستايل. جاهزة في ٤٨ ساعة، باشتراك شهري.','hero.cta1':'خد audit مجاني لصفحتك','hero.cta2':'ادخل الفيد','hero.hint':'انزل عشان تدخل الفيد',
+mq:'وقّف السكرول ✦ UGC بيبيع ✦ جاهز في ٤٨ ساعة ✦ من غير استوديو ✦ من غير موديلز ✦ زوايا جديدة كل شهر ✦',
+'problem.label':'01 — المشكلة','problem.h':'الإعلان بيتحرق بسرعة. <em>وإحنا بنجدده.</em>','problem.p':'نفس الإعلان بيتشاف ٤.٢ مرة في المتوسط، وبعد ٤ مشاهدات نية الشرا بتقل. فيديو واحد مش كفاية، صفحتك محتاجة زوايا جديدة كل شهر.',
+st1:'مرة بيتشاف نفس الإعلان في المتوسط',st2:'نية الشرا بعد ٤ مشاهدات',st3:'من الموافقة لحد ما يبقى جاهز',st4:'صورة منتج واحدة كفاية',
+'work.label':'02 — جوه الفيد','work.h':'من <em>شغلنا</em>','work.hint':'قرّب من أي شاشة، ودوس عشان تتفرج بالصوت.','work.hold':'دوس مطوّل عشان تسرّع',
+'real.label':'03 — الواقعية','real.h':'بُص <em>أقرب</em>.',r1:'ملمس الجلد',r2:'تفاصيل دقيقة',r3:'واقعية كاملة',r4:'أيوه… ده AI.','real.end':'من غير موديل، ولا لوكيشن، ولا مصوّر.','real.btn':'اتفرج على ريل الموديل',
+'one.label':'04 — صورة واحدة','one.h':'صورة واحدة <em>تكفي</em>.','one.client':'«عندي صورة منتج واحدة بس، ينفع تعملوا منها فيديو؟»','one.us':'طبعًا!','one.cta':'ابعتلنا صورة منتجك',
+'svc.label':'05 — الخدمات','svc.h':'كل اللي صفحتك محتاجاه، <em>كل شهر</em>.','s1.t':'إعلانات فيديو','s1.p':'إعلانات سينمائية ١٥–٣٠ ثانية معمولة عشان تبيع.','s2.t':'ريلز','s2.p':'ريلز توقّف السكرول على إنستجرام وتيك توك.','s3.t':'UGC','s3.p':'ريفيوهات وأنبوكسينج بإحساس حقيقي، من غير يوم تصوير.','s4.t':'كاروسيل وصور منتج','s4.p':'كاروسيل يتحفظ وصور منتج بطل.','svc.note':'كل شهر: audit للصفحة ← خطة وسكريبتات ← فيديوهات وصور وكاروسيل ← تقرير. تعديلين لكل فيديو.',
+'pr.label':'06 — إزاي بنشتغل','pr.h':'من البريف للبوست في <em>٤٨ ساعة</em>.','p1.t':'فورم قصير','p1.p':'احكيلنا عن براندك في دقيقتين.','p2.t':'audit مجاني','p2.p':'بنطلّع أهم ٣ مشاكل موقفة البيع.','p3.t':'اجتماع','p3.p':'نتفق على الأهداف وعرض أول شهر.','p4.t':'خطة شهرية','p4.p':'أفكار وهوكس وسكريبتات بتتوافق عليها قبل الإنتاج.','p5.t':'أول دفعة في ٤٨ ساعة','p5.p':'محتوى جاهز للنشر بكل مقاسات المنصات.',
+'pc.label':'07 — الباقات','pc.h':'اشتراك واحد. <em>محتوى جديد</em> كل شهر.','pc.eg':'مصر (جنيه)','pc.sa':'السعودية (ريال)','pc.pop':'الأكثر طلبًا','pc.btn':'ابدأ بـ audit مجاني',pl1:'٤ فيديوهات + ٤ صور منتج',pl2:'٦–٨ فيديوهات + ٨–١٠ صور + كاروسيل + تقرير شهري',pl3:'١٠–١٥ فيديو + ١٥ صورة + ٢ كاروسيل + تقرير',month:'/ شهريًا',custom:'حسب الطلب',
+'cm.fr':'فريلانسر AI','cm.ag':'وكالة AI (دبي)','cm.tr':'تصوير تقليدي','cm.r1':'بيفهم صفحتك الأول','cm.r1a':'audit مجاني','cm.no':'لأ','cm.some':'أحيانًا','cm.r2':'سعر الفيديو','cm.r2a':'≈ ٢٠٠٠ جنيه','cm.r2b':'من ١٠ دولار','cm.r3':'التسليم','cm.r3a':'٤٨ ساعة','cm.r3b':'١–٢ يوم','cm.r3c':'٣–٥ أيام','cm.r3d':'٢–٤ أسابيع','cm.r4':'زوايا جديدة كل شهر','cm.r4a':'أيوه، جزء من الباقة','cm.req':'بالطلب','cm.cost':'إعادة تصوير مكلفة',
+'ab.label':'07 — عننا','ab.h':'UR. يعني <em>بتاعك</em>.','ab.p':'وكمان يعني "إنت". UR. studio استوديو محتوى بالـ AI من القاهرة، والاستوديو كله عنك: براندك، جمهورك، وحكايتك.. في إيدينا. بنفهم صفحتك الأول، وبعدين نعمل محتوى شكله غالي وبيبيع، بجزء من تمن التصوير التقليدي.','ab.sign':'فاطمة، المؤسِّسة والمديرة الإبداعية','ab.photo':'هنا هتتحط صورة فاطمة','m1.t':'نمو','m1.p':'براندك بيطير.','m2.t':'حركة','m2.p':'خطوط سرعة، شريط فيلم، وريلز مبتخلصش.','m3.t':'رؤية','m3.p':'عين بتشوف إيه اللي يوقّف السكرول.',
+'ac.label':'08 — الأكاديمية','ac.h':'اتعلم تعمل محتوى <em>زي UR.</em>','ac.p':'كورسات محتوى بالـ AI للكرييتورز وأصحاب البراندات. قريب.','ac.soon':'قريبًا','c1.t':'من صورة واحدة لفيديو منتج','c1.p':'مبتدئ · ساعتين','c2.t':'موديلز AI واقعية','c2.p':'متوسط · ٣ ساعات','c3.t':'نظام محتوى شهري للبراندات','c3.p':'متقدم · ٤ ساعات','ac.ph':'إيميلك','ac.btn':'سجّل في قائمة الانتظار','ac.done':'اتسجلت في القائمة ✓',
+'au.label':'09 — audit مجاني','au.h':'إعلانك مافشلش. هو <em>قِدِم</em>.','au.p':'بنراجع صفحتك ونبعتلك أهم ٣ حاجات تتصلح، ببلاش. وبعدين نعمل المحتوى.','f.name':'اسمك','f.brand':'اسم البراند','f.link':'لينك إنستجرام أو تيك توك','f.country':'البلد','f.eg':'مصر','f.sa':'السعودية','f.other':'بلد تاني','f.wa':'رقم الواتساب','f.need':'محتاج إيه؟',n1:'إعلانات جديدة كل شهر',n2:'إطلاق منتج',n3:'محتوى أكتر وبشكل منتظم','f.btn':'عايز الـ audit المجاني','f.done':'وصلنا! هنراجع صفحتك ونبعتلك أهم ٣ حاجات تتصلح.',
+'foot.tag':'براندك، في إيدينا.','c.status':'أونلاين · بيرد في ثواني',vb0:'«إدمانك إيه؟»',vb1:'The perfect match',vb2:'أكبر من الحقيقة',vb3:'لقطة بيوتي',vb4:'حيطة الإزايز',vb5:'اشربه',vb6:'نسخة الشتا',vb7:'ورد وشوك',vb8:'لمعة السهرة','vb.vid':'▶ إعلان الكريسماس','cs.label':'دراسة حالة · nspired','cs.h':'Vanilla Blooms، <em>موسم</em> كامل من إزازة واحدة.','cs.p':'إزازة برفان واحدة بقت كامبين كامل: ٩ صور وإعلان فيديو للكريسماس. من غير استوديو، ولا موديلز، ولا يوم تصوير.','cs.f1':'صورة للكامبين','cs.f2':'إعلان فيديو','cs.f3':'أيام تصوير'
+}};
+let lang='en';
+try{ if(localStorage.getItem('ur-lang')==='ar') lang='ar'; }catch(e){}
+const tr=k=>(T[lang][k]??T.en[k]??k);
+function applyLang(){
+  document.documentElement.lang=lang; document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  $$('[data-i18n]').forEach(el=>{const v=T[lang][el.dataset.i18n]; if(v!=null) el.innerHTML=v;});
+  $$('[data-i18n-ph]').forEach(el=>el.placeholder=tr(el.dataset.i18nPh));
+  $('#langBtn').textContent=lang==='ar'?'ع | EN':'EN | ع';
+  $('#quickBtn').textContent=document.documentElement.classList.contains('quick')?tr('nav.immersive'):tr('nav.quick');
+  const m=(tr('mq')+' ').repeat(4); $('#mq').innerHTML='<span>'+m+'</span><span>'+m+'</span>';
+  setPrices(); buildQuickGrid(); resetChat(); if(typeof layout==='function'&&window.__glReady)layout();
+  try{localStorage.setItem('ur-lang',lang)}catch(e){}
+}
+$('#langBtn').onclick=()=>{lang=lang==='en'?'ar':'en';applyLang();};
+
+/* prices */
+let cur='eg';
+function setPrices(){
+  $$('.price').forEach(p=>{const v=p.dataset[cur]; p.innerHTML=v?(v+' <small>'+(cur==='eg'?(lang==='ar'?'جنيه':'EGP'):(lang==='ar'?'ريال':'SAR'))+' '+tr('month')+'</small>'):tr('custom');});
+}
+
+
+/* quick grid */
+function buildQuickGrid(){
+  $('#quickGrid').innerHTML=REELS.map(r=>`<div class="phone" data-open="${r.id}"><video src="media/${r.id}.mp4" poster="media/${r.id}.jpg" muted loop playsinline preload="none"></video><span class="play">▶ ${r.t[lang]}</span></div>`).join('');
+  observeVideos();
+}
+
+/* lazy autoplay for HTML videos */
+let vio;
+function observeVideos(){
+  if(!('IntersectionObserver' in window)) return;
+  vio=vio||new IntersectionObserver(es=>es.forEach(e=>{const v=e.target; if(e.isIntersecting){v.preload='auto';v.play().catch(()=>{})} else v.pause();}),{rootMargin:'100px'});
+  $$('main video').forEach(v=>vio.observe(v));
+}
+
+/* lightbox */
+let lbIndex=0;
+function openReel(id){
+  lbIndex=Math.max(0,REELS.findIndex(r=>r.id===id)); showReel();
+  $('#lightbox').hidden=false; $('#lbClose').focus();
+}
+function showReel(){
+  const r=REELS[lbIndex], v=$('#lbVideo');
+  v.src='media/'+r.id+'.mp4'; v.poster='media/'+r.id+'.jpg'; v.muted=false; v.play().catch(()=>{v.muted=true;v.play().catch(()=>{})});
+  $('#lbTag').textContent=r.tag[lang]; $('#lbTitle').textContent=r.t[lang]; $('#lbDesc').textContent=r.d[lang];
+}
+function closeReel(){const v=$('#lbVideo'); v.pause(); v.removeAttribute('src'); v.load(); $('#lightbox').hidden=true;}
+$('#lbClose').onclick=closeReel;
+$('#lbPrev').onclick=()=>{lbIndex=(lbIndex+REELS.length-1)%REELS.length;showReel()};
+$('#lbNext').onclick=()=>{lbIndex=(lbIndex+1)%REELS.length;showReel()};
+$('#lightbox').addEventListener('click',e=>{if(e.target.id==='lightbox')closeReel()});
+document.addEventListener('click',e=>{const o=e.target.closest('[data-open]'); if(o){e.preventDefault();openReel(o.dataset.open);}});
+
+/* forms */
+$('#auditForm').addEventListener('submit',e=>{e.preventDefault();e.target.classList.add('sent');flock(7);if(endBirdFly)endBirdFly();});
+$('#waitForm').addEventListener('submit',e=>{e.preventDefault();$('#waitBtn').innerHTML=tr('ac.done');$('#waitEmail').value='';});
+
+/* flock easter egg */
+function flock(n){
+  for(let i=0;i<n;i++){const im=document.createElement('img');im.src='media/logo.png';im.alt='';im.className='flyer';
+    im.style.left=(lang==='ar'?60+Math.random()*30:Math.random()*30)+'vw'; im.style.top=(55+Math.random()*40)+'vh'; im.style.width=(30+Math.random()*40)+'px'; im.style.animationDelay=(i*0.12)+'s';
+    document.body.appendChild(im); setTimeout(()=>im.remove(),4000);}
+}
+let typed='';
+addEventListener('keydown',e=>{
+  if(e.target.closest&&e.target.closest('input,select,textarea'))return;
+  if(e.key==='Escape'){ if(!$('#lightbox').hidden)closeReel(); if(!$('#cPanel').hidden)toggleChat(false); }
+  typed=(typed+e.key).slice(-2).toLowerCase(); if(typed==='ur')flock(9);
+  if(e.code==='Space'&&inFeed){e.preventDefault();warp=true;}
+});
+addEventListener('keyup',e=>{if(e.code==='Space')warp=false;});
+
+/* concierge (scripted; ready for a real model later) */
+const C={
+ en:{hi:'Hi! I’m the UR. Concierge. Three quick questions and I’ll tell you where to start. What do you sell?',sell:['Skincare','Makeup & beauty','Perfume','Fashion & lifestyle','Clinic'],where:'Where do you sell?',places:['Egypt','Saudi & Gulf'],need:'What do you need most right now?',needs:['Fresh ads every month','A product launch','More content, more often'],svc:['Video ads every month','A launch pack: reels + product images','Reels & UGC, every week'],rec:p=>`I\u2019d start you with <b>${p}</b>. And first, a free page audit: we\u2019ll find the top 3 things stopping your sales.`,see:'Show me the services',reel:'Watch a similar reel',audit:'Get my free audit',again:'Start over'},
+ ar:{hi:'أهلًا! أنا UR. Concierge. ٣ أسئلة سريعة وأقولك تبدأ منين. بتبيع إيه؟',sell:['سكين كير','ميكب وبيوتي','عطور','فاشون ولايف ستايل','عيادة'],where:'بتبيع فين؟',places:['مصر','السعودية والخليج'],need:'محتاج إيه أكتر دلوقتي؟',needs:['إعلانات جديدة كل شهر','إطلاق منتج','محتوى أكتر وبانتظام'],svc:['إعلانات فيديو كل شهر','باكدج إطلاق: ريلز + صور منتج','ريلز وUGC كل أسبوع'],rec:p=>`أنصحك تبدأ بـ <b>${p}</b>. وقبلها audit مجاني لصفحتك: هنطلّع أهم ٣ حاجات موقفة البيع.`,see:'وريني الخدمات',reel:'اتفرج على ريل شبهه',audit:'عايز الـ audit المجاني',again:'ابدأ من الأول'}
+};
+let ans={};
+function bot(html,opts){
+  const b=$('#cBody'); const m=document.createElement('div'); m.className='msg bot'; m.innerHTML=html; b.appendChild(m);
+  if(opts){const o=document.createElement('div');o.className='opts';opts.forEach(([label,fn,solid])=>{const btn=document.createElement('button');btn.textContent=label;if(solid)btn.className='solidb';btn.onclick=()=>{o.remove();fn(label)};o.appendChild(btn)});b.appendChild(o);}
+  b.scrollTop=b.scrollHeight;
+}
+function me(t){const m=document.createElement('div');m.className='msg me';m.textContent=t;$('#cBody').appendChild(m);}
+function resetChat(){
+  const c=C[lang]; ans={}; $('#cBody').innerHTML='';
+  bot(c.hi,c.sell.map((s,i)=>[s,l=>{me(l);ans.sell=i;setTimeout(()=>bot(c.where,c.places.map((p,j)=>[p,l2=>{me(l2);ans.where=j;setTimeout(()=>bot(c.need,c.needs.map((n,k)=>[n,l3=>{me(l3);ans.need=k;setTimeout(recommend,400)}])),400)}])),400)}]));
+}
+function recommend(){
+  const c=C[lang]; const svc=c.svc[ans.need];
+  const reel=['realistic-ad','realistic-ad','santa','drink','realistic-ad'][ans.sell];
+  bot(c.rec(svc),[
+    [c.audit,()=>{toggleChat(false);go('#audit');},true],
+    [c.reel,()=>{openReel(reel)}],
+    [c.see,()=>{toggleChat(false);go('#services');}],
+    [c.again,()=>resetChat()]
+  ]);
+}
+function toggleChat(open){ $('#cPanel').hidden=!open; $('#cBtn').setAttribute('aria-expanded',open); }
+$('#cBtn').onclick=()=>toggleChat($('#cPanel').hidden); $('#cClose').onclick=()=>toggleChat(false);
+function go(sel){ const el=$(sel); if(el) window.scrollTo({top:el.getBoundingClientRect().top+scrollY,behavior:reduce?'auto':'smooth'}); }
+
+/* quick view */
+function setQuick(on){
+  document.documentElement.classList.toggle('quick',on); $('#quickBtn').textContent=on?tr('nav.immersive'):tr('nav.quick');
+}
+$('#quickBtn').onclick=()=>setQuick(!document.documentElement.classList.contains('quick'));
+
+/* cursor */
+const cur$=$('#cur'); let mx=innerWidth/2,my=innerHeight/2;
+addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY;cur$.style.transform=`translate(${mx+100}px,${my+100}px) translate(-50%,-50%)`;});
+function cursorMode(txt){ if(txt){cur$.classList.add('big');cur$.textContent=txt;} else {cur$.classList.remove('big');cur$.textContent='';} }
+document.addEventListener('pointerover',e=>{ if(e.target.closest('.phone,[data-open]'))cursorMode('Play'); else if(!hoverScreen) cursorMode(''); });
+
+/* counters */
+const cio=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;cio.unobserve(e.target);const b=e.target,to=+b.dataset.count,f=b.dataset.fmt;let t0=null;
+  const fmt=v=>f==='x'?v.toFixed(1)+'×':f==='neg'?'−'+Math.round(v)+'%':f==='h'?Math.round(v)+'h':Math.round(v);
+  const step=ts=>{t0=t0||ts;const k=clamp((ts-t0)/1400);b.textContent=fmt(to*(1-Math.pow(1-k,3)));if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step);}),{threshold:.6});
+$$('[data-count]').forEach(b=>cio.observe(b));
+
+applyLang();
+observeVideos();
+
+/* ---------- scroll-driven HTML scenes ---------- */
+const hero=$('#hero'), work=$('#work'), realism=$('#realism'), header=$('#top');
+const realImgs=$$('#realFrame img'), realLis=$$('#realSteps li');
+const heroImg=$('#heroImg'); let tiltX=0,tiltY=0;
+function secProgress(el){const r=el.getBoundingClientRect();return clamp(-r.top/(r.height-innerHeight));}
+let mqX=0, lastY=scrollY, vel=0, inFeed=false, warp=false, hoverScreen=null;
+function htmlFrame(dt){
+  const y=scrollY; vel=lerp(vel,(y-lastY),.2); lastY=y;
+  header.classList.toggle('scrolled',y>40);
+  // marquee speeds up with scroll velocity
+  mqX-= (40+Math.abs(vel)*6)*dt*(lang==='ar'?-1:1); const tw=$('#mq').scrollWidth/2||1; if(mqX<-tw)mqX+=tw; if(mqX>0)mqX-=tw;
+  $('#mq').style.transform=`translateX(${mqX}px)`;
+  // hero image tilt + walk-out
+  const hp=clamp(y/innerHeight);
+  tiltX=lerp(tiltX,(my/innerHeight-.5)*-10,.08); tiltY=lerp(tiltY,(mx/innerWidth-.5)*14,.08);
+  if(!reduce) heroImg.style.transform=`translateY(${-hp*80}px) scale(${1+hp*.22}) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+  // realism macro sequence
+  if(!document.documentElement.classList.contains('quick')){
+    const p=secProgress(realism)*4; const idx=Math.min(3,Math.floor(p));
+    realImgs.forEach((im,i)=>{const local=clamp(p-i);
+      im.style.opacity=i===0?1:clamp((p-i+.25)*4);
+      im.style.transform=`scale(${reduce?1:(i===3?lerp(1.5,1,clamp(local*1.4)):lerp(1.9,1.05,local))})`;});
+    realLis.forEach((li,i)=>li.classList.toggle('on',i===idx));
+    $('#realEnd').classList.toggle('on',p>3.4);
+  }
+  // case study horizontal track
+  if(!document.documentElement.classList.contains('quick')){
+    const cs=$('#case'), tr=$('#caseTrack'); const cp=clamp((secProgress(cs)-.12)/.8); const dist=Math.max(0,tr.scrollWidth-innerWidth+40);
+    tr.style.transform=`translateX(${(lang==='ar'?1:-1)*cp*dist}px)`;
+  } else $('#caseTrack').style.transform='';
+  // process line
+  const pr=$('#steps').getBoundingClientRect(); const sp=clamp((innerHeight*.8-pr.top)/(innerHeight*.6));
+  $('#stepFill').style.width=(sp*100)+'%'; $$('.step').forEach((s,i)=>s.classList.toggle('on',sp>=i/4-0.01));
+  // phones parallax
+  const ph=$('#phones').getBoundingClientRect(); const pp=(ph.top+ph.height/2-innerHeight/2)/innerHeight;
+  if(!reduce) $$('#phones .phone').forEach((p,i)=>p.style.transform=`translateY(${pp*(i?-90:60)}px) rotate(${pp*(i?6:-6)}deg)`);
+}
+
+/* ---------- WebGL world ---------- */
+let renderer, scene, camera, birdA, birdB, stripes, screens=[], endBirdFly=null;
+const canGL=(()=>{try{const c=document.createElement('canvas');return !!(window.THREE&&(c.getContext('webgl2')||c.getContext('webgl')))}catch(e){return false}})();
+const lowPower=(navigator.hardwareConcurrency||4)<=2;
+if(!canGL||reduce) setQuick(true);
+
+const bar=$('#loadbar'); let loadP=0; const setLoad=v=>{loadP=Math.max(loadP,v);bar.style.width=(loadP*100)+'%'};
+
+function makeBird(points,count,scale){
+  const n=count, pos=new Float32Array(n*3), aBird=new Float32Array(n*3), aSc=new Float32Array(n*3), aR=new Float32Array(n);
+  for(let i=0;i<n;i++){const p=points[i%points.length];
+    aBird[i*3]=p[0]*scale+(Math.random()-.5)*.02; aBird[i*3+1]=p[1]*scale+(Math.random()-.5)*.02; aBird[i*3+2]=(Math.random()-.5)*.25;
+    const r=3+Math.random()*7, th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1);
+    aSc[i*3]=r*Math.sin(ph)*Math.cos(th); aSc[i*3+1]=r*Math.sin(ph)*Math.sin(th)*.6; aSc[i*3+2]=r*Math.cos(ph)-2; aR[i]=Math.random();}
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.setAttribute('aBird',new THREE.BufferAttribute(aBird,3)); g.setAttribute('aSc',new THREE.BufferAttribute(aSc,3)); g.setAttribute('aR',new THREE.BufferAttribute(aR,1));
+  const m=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
+    uniforms:{uMorph:{value:0},uTime:{value:0},uExplode:{value:0},uMouse:{value:new THREE.Vector2(99,99)},uPR:{value:Math.min(devicePixelRatio,2)},uAlpha:{value:1},uColor:{value:new THREE.Color('#78D403')}},
+    vertexShader:`attribute vec3 aBird;attribute vec3 aSc;attribute float aR;uniform float uMorph,uTime,uExplode,uPR;uniform vec2 uMouse;varying float vA;
+    void main(){float m=smoothstep(0.,1.,clamp(uMorph*1.4-aR*.4,0.,1.));vec3 p=mix(aSc,aBird,m);
+      float w=(1.-m)*.5+.015;p.x+=sin(uTime*.7+aR*40.)*w;p.y+=cos(uTime*.6+aR*30.)*w;p.z+=sin(uTime*.5+aR*20.)*w*.6;
+      vec2 d=p.xy-uMouse;float dist=length(d);p.xy+=normalize(d+1e-4)*smoothstep(1.1,0.,dist)*.55*m;
+      p+=vec3(aSc.x*.9,aSc.y*.9,aR*14.)*uExplode*uExplode;
+      vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+      gl_PointSize=(1.6+aR*2.6)*uPR*(5.5/-mv.z)*(1.+uExplode*2.);vA=(.45+aR*.55);}`,
+    fragmentShader:`uniform vec3 uColor;uniform float uAlpha;varying float vA;void main(){vec2 c=gl_PointCoord-.5;float d=length(c);if(d>.5)discard;float a=smoothstep(.5,0.,d);gl_FragColor=vec4(uColor*(.8+a*.6),a*vA*uAlpha);}`});
+  return new THREE.Points(g,m);
+}
+
+function initGL(points){
+  const cv=$('#gl');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:false,alpha:false,powerPreference:'high-performance'});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,lowPower?1:1.75)); renderer.setSize(innerWidth,innerHeight,false);
+  scene=new THREE.Scene(); scene.background=new THREE.Color('#0A0A0A'); scene.fog=new THREE.FogExp2('#0A0A0A',.055);
+  camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,200); camera.position.set(0,0,6);
+
+  const cnt=isTouch?2600:4200;
+  birdA=makeBird(points,cnt,2.1); scene.add(birdA);
+  birdB=makeBird(points,isTouch?2000:3200,1.8); birdB.position.set(0,.2,-76); scene.add(birdB);
+
+  // speed stripes from the logo: thin long bars around the tunnel
+  const N=isTouch?140:260, geo=new THREE.BoxGeometry(.018,.018,1);
+  const mat=new THREE.MeshBasicMaterial({color:'#78D403',transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false,fog:true});
+  stripes=new THREE.InstancedMesh(geo,mat,N); stripes.userData.items=[];
+  for(let i=0;i<N;i++){const a=Math.random()*Math.PI*2, r=3.2+Math.random()*5;
+    stripes.userData.items.push({x:Math.cos(a)*r,y:Math.sin(a)*r*.7,z:-Math.random()*110+8,len:.6+Math.random()*3.4,sp:.6+Math.random()});}
+  scene.add(stripes);
+
+  // floating reel screens (video textures)
+  const order=[0,3,2,5,4,1,6,3,0,5,2,4];
+  order.forEach((ri,k)=>{
+    const r=REELS[ri]; const v=document.createElement('video'); v.src='media/'+r.id+'.mp4'; v.muted=true; v.loop=true; v.playsInline=true; v.setAttribute('playsinline',''); v.preload='none';
+    const tex=new THREE.VideoTexture(v); tex.minFilter=THREE.LinearFilter; tex.magFilter=THREE.LinearFilter;
+    const poster=new THREE.TextureLoader().load('media/'+r.id+'.jpg');
+    const m=new THREE.MeshBasicMaterial({map:poster,fog:true,transparent:true});
+    const mesh=new THREE.Mesh(new THREE.PlaneGeometry(1.12,2),m);
+    const side=k%2?1:-1; mesh.userData={ri,v,tex,poster,side,baseX:side,baseY:(Math.random()-.5)*.8,z:-9-k*4.6,playing:false,hover:0};
+    mesh.position.set(side*1.9,mesh.userData.baseY,mesh.userData.z); mesh.rotation.y=-side*.42;
+    // green rim
+    const rim=new THREE.Mesh(new THREE.PlaneGeometry(1.18,2.06),new THREE.MeshBasicMaterial({color:'#78D403',transparent:true,opacity:0,fog:true}));
+    rim.position.z=-.01; mesh.add(rim); mesh.userData.rim=rim;
+    scene.add(mesh); screens.push(mesh);
+  });
+
+  endBirdFly=()=>{flyT=0.0001;};
+  addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();layout();});
+  layout(); window.__glReady=true;
+}
+let heroBirdX=0;
+function layout(){
+  const aspect=innerWidth/innerHeight, wide=innerWidth>960;
+  heroBirdX=wide?(lang==='ar'?-1:1)*Math.min(2.4,aspect*1.25):0;
+  const sx=Math.min(1.9,aspect*1.25+.35);
+  screens.forEach(s=>s.userData.baseX=s.userData.side*sx);
+}
+
+/* pointer → world */
+const ray=window.THREE?new THREE.Raycaster():null, ndc={x:0,y:0};
+addEventListener('pointermove',e=>{ndc.x=e.clientX/innerWidth*2-1; ndc.y=-(e.clientY/innerHeight)*2+1;});
+addEventListener('pointerdown',e=>{if(inFeed&&!e.target.closest('a,button,input,select,#cPanel,#lightbox')){warpTimer=setTimeout(()=>warp=true,260);}});
+addEventListener('pointerup',()=>{clearTimeout(warpTimer);setTimeout(()=>warp=false,0);});
+let warpTimer=null, downAt=0;
+addEventListener('click',e=>{
+  if(!renderer||document.documentElement.classList.contains('quick'))return;
+  if(e.target.closest('a,button,input,select,label,#cPanel,#lightbox,.phone,.svc,.plan,form'))return;
+  if(hoverScreen) openReel(REELS[hoverScreen.userData.ri].id);
+});
+
+let flyT=0, camZ=6, t0=performance.now(), warpSpeed=0, introT=0;
+function glFrame(dt,time){
+  const quick=document.documentElement.classList.contains('quick');
+  if(quick||!renderer) return;
+  const y=scrollY, H=innerHeight;
+  const heroP=clamp(y/H);
+  const feedP=secProgress(work);
+  const wr=work.getBoundingClientRect(); inFeed=wr.top<H*.3&&wr.bottom>H*.7;
+  const after=clamp((y-(work.offsetTop+work.offsetHeight-H))/(document.body.scrollHeight-H-(work.offsetTop+work.offsetHeight-H)));
+  // camera path
+  const targetZ=6-heroP*3-feedP*58-after*14;
+  camZ=lerp(camZ,targetZ,reduce?1:.08);
+  camera.position.z=camZ;
+  camera.position.x=lerp(camera.position.x,Math.sin(feedP*Math.PI*3)*.35+ndc.x*.25,.05);
+  camera.position.y=lerp(camera.position.y,ndc.y*.18,.05);
+  camera.lookAt(camera.position.x*.5,0,camZ-6);
+
+  // intro morph (loader)
+  introT=Math.min(1,introT+dt/2.2);
+  const u=birdA.material.uniforms; u.uTime.value=time; u.uMorph.value=introT;
+  u.uExplode.value=clamp(heroP*1.1+feedP*2); u.uAlpha.value=clamp(1-feedP*3)*(.35+.65*(1-clamp(heroP*1.5)*0.4));
+  const bx=lerp(0,heroBirdX,clamp((introT-.75)*4)); birdA.position.x=lerp(birdA.position.x,bx,.06);
+  birdA.position.y=innerWidth>960?0:lerp(0,1.1,clamp((introT-.75)*4));
+  birdA.visible=feedP<.4;
+  // mouse into bird space
+  if(ray){ray.setFromCamera(ndc,camera); const pl=new THREE.Plane(new THREE.Vector3(0,0,1),-birdA.position.z); const hit=new THREE.Vector3(); if(ray.ray.intersectPlane(pl,hit)){u.uMouse.value.set(hit.x-birdA.position.x,hit.y-birdA.position.y);} }
+  // end bird
+  const ub=birdB.material.uniforms; ub.uTime.value=time;
+  if(flyT>0){flyT+=dt; ub.uExplode.value=clamp(flyT/1.6); birdB.position.y+=dt*1.5; birdB.position.x+=dt*(lang==='ar'?-2:2);}
+  else ub.uMorph.value=lerp(ub.uMorph.value,clamp((after-.72)/.25),.06);
+  ub.uMouse.value.copy(u.uMouse.value).multiplyScalar(.6);
+  birdB.visible=after>.4; ub.uAlpha.value=.9;
+
+  // stripes stream past camera
+  warpSpeed=lerp(warpSpeed,warp?55:0,.06);
+  const base=2.5+Math.abs(vel)*.9+warpSpeed;
+  const its=stripes.userData.items, M=new THREE.Matrix4(), S=new THREE.Vector3(), P=new THREE.Vector3(), Q=new THREE.Quaternion();
+  for(let i=0;i<its.length;i++){const it=its[i]; it.z+=base*it.sp*dt; if(it.z>camZ+4) it.z-=110; if(it.z<camZ-106) it.z+=110;
+    P.set(it.x,it.y,it.z); S.set(1,1,it.len*(1+warpSpeed*.08+Math.abs(vel)*.05)); M.compose(P,Q,S); stripes.setMatrixAt(i,M);}
+  stripes.instanceMatrix.needsUpdate=true;
+  stripes.material.opacity=.25+clamp(feedP*4)*.35+clamp(after)*.1;
+
+  // screens
+  let hit=null;
+  if(ray&&inFeed){ray.setFromCamera(ndc,camera); const h=ray.intersectObjects(screens,false); if(h.length)hit=h[0].object;}
+  if(hit!==hoverScreen){hoverScreen=hit; cursorMode(hit?(lang==='ar'?'شغّل':'Play'):''); const tag=$('#reelTag'); if(hit){tag.textContent=REELS[hit.userData.ri].tag[lang]+' · '+REELS[hit.userData.ri].t[lang];tag.style.opacity=1;} else tag.style.opacity=0;}
+  $('#reelTag').style.left=mx+'px'; $('#reelTag').style.top=my+'px';
+  let nearest=0,nd=1e9;
+  screens.forEach((s,i)=>{const d=s.userData; const dz=d.z-camZ; const near=dz<4&&dz>-22;
+    if(near&&!d.playing){d.v.preload='auto';d.v.play().then(()=>{s.material.map=d.tex;s.material.needsUpdate=true}).catch(()=>{});d.playing=true;}
+    else if(!near&&d.playing){d.v.pause();d.playing=false;}
+    d.hover=lerp(d.hover,s===hoverScreen?1:0,.12);
+    s.position.x=lerp(s.position.x,d.baseX*(1-d.hover*.18),.1);
+    s.position.y=d.baseY+Math.sin(time*.8+i)*.08;
+    s.position.z=d.z+d.hover*1.2;
+    s.rotation.y=-d.side*.42*(1-d.hover*.7)+Math.sin(time*.5+i)*.04;
+    s.material.opacity=clamp((dz+40)/10)*clamp(1-(dz-1)/3)*clamp(heroP*2+.2);
+    d.rim.material.opacity=d.hover*.9;
+    const dd=Math.abs(dz+4); if(dd<nd){nd=dd;nearest=d.ri;}
+  });
+  $('#feedNum').textContent=String(Math.min(12,Math.floor(feedP*12)+1)).padStart(2,'0')+' / 12';
+  $('#feedBar').style.transform=`scaleX(${feedP})`;
+  renderer.render(scene,camera);
+}
+
+let last=performance.now(), running=true;
+document.addEventListener('visibilitychange',()=>{running=!document.hidden; if(running){last=performance.now();requestAnimationFrame(loop);}});
+function loop(now){
+  if(!running)return;
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  htmlFrame(dt); glFrame(dt,now/1000);
+  requestAnimationFrame(loop);
+}
+
+function ready(){ document.body.classList.add('ready'); setTimeout(()=>{$('#loader').hidden=true},900); }
+setLoad(.15);
+if(canGL&&!reduce){
+  fetch('media/bird.json').then(r=>r.json()).then(pts=>{setLoad(.6); initGL(pts); setLoad(1); setTimeout(ready,isTouch?1500:2000);})
+   .catch(err=>{console.warn('3D view off:',err);setQuick(true);setLoad(1);ready();});
+} else { setLoad(1); setTimeout(ready,300); }
+requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
